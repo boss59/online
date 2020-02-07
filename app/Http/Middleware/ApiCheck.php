@@ -10,7 +10,19 @@ class ApiCheck
 {
     private  $_map = [
         # appkey => appsecret
-        '1903' => '1903a'
+        '1903' => '1903a',
+        '1904' => '1904a'
+    ];
+
+
+    private $_api_power = [
+        '1903' => [
+            'ssl/login',
+            'ssl/register'
+        ],
+        '1904' => [
+            'ssl/login'
+        ]
     ];
 
     # 1分钟可以访问的次数
@@ -28,14 +40,13 @@ class ApiCheck
      */
     public function handle($request, Closure $next)
     {
+        //var_dump($request->all());exit;
         # 限制接口访问次数
         $check_access_limit = $this -> _checkApiLimit( $request );
         if ($check_access_limit['status'] != 200){
             return response($check_access_limit);
         }
 
-        # 对接口的数据进行解密，并且进新验签操作
-//        var_dump($request->all());exit;
         # 解密客户端传递的数据
         $api_request = $this -> _RsaDcrypt($request);
 
@@ -45,9 +56,14 @@ class ApiCheck
             return response($reset_check);
         }
 
+        # 鉴权 安全接口权限 -- 控制客户端调用的接口
+        $power_check = $this -> _checkApiPower($api_request);
+        if ($power_check['status'] != 200){
+            return response($power_check);
+        }
+
         # 验证签名 【 防止在传输的过程中的数据被篡改 】
         $check_result = $this-> _checkSign( $api_request, $request->post('sign'));
-
         if( $check_result['status'] != 200){
             return response($check_result);
         }else{
@@ -58,17 +74,14 @@ class ApiCheck
         }
     }
 
-    /**
-     * 对接收到的数据使用私钥解密
-     */
+    //  对接收到的数据使用私钥解密
     private  function _RsaDcrypt(Request $request)
     {
-        $data_str = $request->post('data');
-
-        # 私钥解密过程
+        # 私钥解密过程  分段解密
             # 1. base64 反编码得到的加密串
             # 2. 获取 128 个长度,得到第一个的 加密的结果
             # 3. while循环 加密的数据 进行 拼接
+        $data_str = $request->post('data');
 
         $all_decrypt = base64_decode( $data_str );
         $j = 0;
@@ -88,20 +101,48 @@ class ApiCheck
         return json_decode($all_new,true);
     }
 
-    /*
-     *
-     * 数据重放攻击
+    // 鉴权 检查接口的权限
+    private function _checkApiPower($api_data)
+    {
+        $app_key = $api_data['app_key'];
 
-		在数据传输的过程中，拦截到正确数据，拿着这个正确的数据，频繁的请求我们的接口。
-		解决：
-			1、在客户端请求服务端的时候，添加2个参数【 一个是当前的时间戳，一个是随机数】
-			2、把时间戳和随机数加入签名中
-			3、服务端接受到时间戳和随机数，把时间戳和随机数组合起来写入到一个集合中，如果这个组合没有在集合中，
-			    则可以正常写入集合，说明这个请求是正常的，如果写入失败，说明这个组合已经被使用过了，就不能再次请求
-			    接口了
-     */
+        if ( !isset($this -> _api_power[$app_key])){
+
+            return ['status'=>3000, 'data' => [], 'msg' => 'app_key 不正确'];
+        }
+
+        $this_power =$this->_api_power[$app_key];
+
+        # 统一改成小写
+        foreach( $this_power as $k=>$v ){
+            $this_power[$k] = strtolower($v);
+        }
+
+        # 获取当前路由
+        $url =  request() -> route() ->uri ;//dd($url ,$this_power);
+
+        if ( in_array( strtolower($url),$this_power )){
+
+            return ['status'=>200, 'data' => [], 'msg' => 'successuly'];
+
+        }else{
+
+            return ['status'=>4000, 'data' => [], 'msg' => '滚，你个龟孙儿无法调用此接口！！！'];
+        }
+    }
+
+    //  接口重放攻击
     private function _checkApiReseRequest($api_data)
     {
+        /*
+         * 在数据传输的过程中，拦截到正确数据，拿着这个正确的数据，频繁的请求我们的接口。
+		    解决：
+			    1、在客户端请求服务端的时候，添加2个参数【 一个是当前的时间戳，一个是随机数】
+			    2、把时间戳和随机数加入签名中
+			    3、服务端接受到时间戳和随机数，把时间戳和随机数组合起来写入到一个集合中，如果这个组合没有在集合中，
+			    则可以正常写入集合，说明这个请求是正常的，如果写入失败，说明这个组合已经被使用过了，就不能再次请求
+			    接口了
+         */
         $set_name = 'reset_set';
         if (!empty($api_data['time']) && !empty($api_data['rand_code'])){
             $set_code = $api_data['time'].$api_data['rand_code'];
@@ -123,9 +164,8 @@ class ApiCheck
             return ['status'=>9999, 'data' => [], 'msg' => '缺少重要参数，请查看参数是否正常'];
         }
     }
-    /*
-     * 限制接口访问次数
-     */
+
+    // 限制接口访问次数
     private function _checkApiLimit(Request $request)
     {
         $ip = $request -> getClientIp();
@@ -186,15 +226,10 @@ class ApiCheck
         return ['status'=>200, 'data' => [], 'msg' => 'sussessuly'];
 
     }
-    /**
-     * 对客户端传递的数据进行验签操作
-     */
+
+    // 对客户端传递的数据进行验签操作
     private function  _checkSign($data,$client_sign)
     {
-        if (empty($data)){
-
-            return ['status'=>200, 'data' => [], 'msg' => 'success'];
-        }
         /*
          * 服务端接受数据，对数据进行验签操作
 				（1）接受到传递的原始数据
@@ -206,6 +241,11 @@ class ApiCheck
 				（7）对比服务端和客户端的签名是否一致，如果一致说明数据是没有被篡改的
 				（8）如果签名不一致说明数据被篡改了，提示验签失败即可。
         */
+        if (empty($data)){
+
+            return ['status'=>200, 'data' => [], 'msg' => 'success'];
+        }
+
         // 对数据进行排序操作 并排序的数据，转化成json格式
         ksort($data);
         $json_str = json_encode($data);

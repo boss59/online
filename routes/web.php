@@ -16,3 +16,4 @@ Route::get('/', function () {
 });
 // ================   接口 验签   ==============
 Route::any('/ssl/login','ssl\SllController@login')->middleware('apiCheck');
+Route::any('/ssl/register','ssl\SllController@register')->middleware('apiCheck');
