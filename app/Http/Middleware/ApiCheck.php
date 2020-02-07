@@ -15,9 +15,9 @@ class ApiCheck
 
     # 1分钟可以访问的次数
     private $_limit_cont = 80;
+
     # 禁止访问时间 【加入黑名单之后多久可以访问 秒为单位】
     private $_black_time = 1800;
-
 
     /**
      * Handle an incoming request.
