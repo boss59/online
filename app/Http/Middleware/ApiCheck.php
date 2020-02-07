@@ -87,8 +87,18 @@ class ApiCheck
 
         return json_decode($all_new,true);
     }
+
     /*
-     * 防止接口重放攻击
+     *
+     * 数据重放攻击
+
+		在数据传输的过程中，拦截到正确数据，拿着这个正确的数据，频繁的请求我们的接口。
+		解决：
+			1、在客户端请求服务端的时候，添加2个参数【 一个是当前的时间戳，一个是随机数】
+			2、把时间戳和随机数加入签名中
+			3、服务端接受到时间戳和随机数，把时间戳和随机数组合起来写入到一个集合中，如果这个组合没有在集合中，
+			    则可以正常写入集合，说明这个请求是正常的，如果写入失败，说明这个组合已经被使用过了，就不能再次请求
+			    接口了
      */
     private function _checkApiReseRequest($api_data)
     {
@@ -101,24 +111,16 @@ class ApiCheck
             Redis::Expire($set_name,60);
 
             if ( !$result ){
-                return [
-                    'status'=>2000000,
-                    'data' => [],
-                    'msg' => '请查看参数是否重复'
-                ];
+
+                return ['status'=>2000000, 'data' => [], 'msg' => '请查看参数是否重复'];
+
             }else{
-                return [
-                    'status'=>200,
-                    'data' => [],
-                    'msg' => 'successuly'
-                ];
+
+                return ['status'=>200, 'data' => [], 'msg' => 'successuly'];
             }
         }else{
-            return [
-                'status'=>9999,
-                'data' => [],
-                'msg' => '缺少重要参数，请查看参数是否正常'
-            ];
+
+            return ['status'=>9999, 'data' => [], 'msg' => '缺少重要参数，请查看参数是否正常'];
         }
     }
     /*
@@ -137,8 +139,11 @@ class ApiCheck
 
             #判断进入黑名单时间是否超过 半个小时
             if (time() - $join_time > $this -> _black_time) {
+
+                # 移除当前集合中的 ip 地址
                 Redis::zRem($black_list_key,$ip);
             }else{
+
                 return [
                     'status'=>1000,
                     'data' => [],
@@ -177,11 +182,8 @@ class ApiCheck
                 'msg' => '你还不能访问接口,还需等'.( $this->_black_time -(time() - $mark)).'秒才能访问'
             ];
         }
-        return [
-            'status'=>200,
-            'data' => [],
-            'msg' => 'sussessuly'
-        ];
+
+        return ['status'=>200, 'data' => [], 'msg' => 'sussessuly'];
 
     }
     /**
@@ -190,11 +192,8 @@ class ApiCheck
     private function  _checkSign($data,$client_sign)
     {
         if (empty($data)){
-            return [
-                'status'=>200,
-                'data' => [],
-                'msg' => 'success'
-            ];
+
+            return ['status'=>200, 'data' => [], 'msg' => 'success'];
         }
         /*
          * 服务端接受数据，对数据进行验签操作
