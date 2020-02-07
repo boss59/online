@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
 
 class ApiCheck
@@ -11,6 +12,13 @@ class ApiCheck
         # appkey => appsecret
         '1903' => '1903a'
     ];
+
+    # 1分钟可以访问的次数
+    private $_limit_cont = 80;
+    # 禁止访问时间 【加入黑名单之后多久可以访问 秒为单位】
+    private $_black_time = 1800;
+
+
     /**
      * Handle an incoming request.
      *
@@ -20,6 +28,12 @@ class ApiCheck
      */
     public function handle($request, Closure $next)
     {
+        # 限制接口访问次数
+        $check_access_limit = $this -> _checkApiRequest( $request );
+        if ($check_access_limit['status'] != 200){
+            return response($check_access_limit);
+        }
+
         # 对接口的数据进行解密，并且进新验签操作
 //        var_dump($request->all());exit;
         # 解密客户端传递的数据
@@ -29,7 +43,7 @@ class ApiCheck
         $check_result = $this-> _checkSign( $api_request, $request->post('sign'));
 
         if( $check_result['status'] != 200){
-            return $check_result;
+            return response($check_result);
         }else{
             if (!empty($api_request)){
                 $request-> replace($api_request);
@@ -68,6 +82,69 @@ class ApiCheck
         return json_decode($all_new,true);
     }
 
+    /*
+     * 限制接口访问次数
+     */
+    private function _checkApiRequest(Request $request)
+    {
+        $ip = $request -> getClientIp();
+        # 黑名单 【有序集合】
+        $black_list_key = 'black_list';
+        $black_list = Redis::ZRange($black_list_key,0,-1);
+
+        if (in_array($ip,$black_list)) {
+            #取出当前ip加入黑名单的时间
+            $join_time = Redis::zScore($black_list_key,$ip);
+
+            #判断进入黑名单时间是否超过 半个小时
+            if (time() - $join_time > $this -> _black_time) {
+                Redis::zRem($black_list_key,$ip);
+            }else{
+                return [
+                    'status'=>1000,
+                    'data' => [],
+                    'msg' => '你还不能访问接口,还需等'.( $this->_black_time -(time() -$join_time)).'秒才能访问'
+                ];
+            }
+        }
+
+        $date = date('H:i:s');
+        $key =  $ip.'-'.substr($date,0, strlen($date) -1).'0';
+
+        # 自增 次数加1
+        $number = Redis::incr($key);
+        if ($number == 1) {
+            Redis::expire($key,60);
+        }
+
+        # 获取当前时间 之前 50秒的访问次数
+        $time = time();
+        $sum = 0;
+        for ( $i = 1; $i <6 ; $i++) {
+            $cur_time = $time - 10 * $i;
+            $format_time = date('H:i:s',$cur_time);
+            $time_key = $ip.'-'.substr($format_time,0, strlen($format_time) -1).'0';
+            $number_a = Redis::get($time_key);
+            $sum += $number_a;
+        }
+
+        # 如果次数 超过 100 测不能访问
+        if ($sum + $number >= $this -> _limit_cont) {
+            # 利用集合中的socre 分值字段加入黑名单
+            $mark = Redis::zAdd( $black_list_key , time() , $ip );
+            return [
+                'status'=>1000,
+                'data' => [],
+                'msg' => '你还不能访问接口,还需等'.( $this->_black_time -(time() - $mark)).'秒才能访问'
+            ];
+        }
+        return [
+            'status'=>200,
+            'data' => [],
+            'msg' => 'sussessuly'
+        ];
+
+    }
     /**
      * 对客户端传递的数据进行验签操作
      */
