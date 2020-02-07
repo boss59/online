@@ -202,7 +202,6 @@ class ApiCheck
     /*
      *  通过appid 获取对应的app秘钥
      */
-
     public function getAppSecretByAppkey($app_key)
     {
         # 如果appid是错误的，直接返回错误信息
