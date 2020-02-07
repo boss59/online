@@ -29,7 +29,7 @@ class ApiCheck
     public function handle($request, Closure $next)
     {
         # 限制接口访问次数
-        $check_access_limit = $this -> _checkApiRequest( $request );
+        $check_access_limit = $this -> _checkApiLimit( $request );
         if ($check_access_limit['status'] != 200){
             return response($check_access_limit);
         }
@@ -38,6 +38,12 @@ class ApiCheck
 //        var_dump($request->all());exit;
         # 解密客户端传递的数据
         $api_request = $this -> _RsaDcrypt($request);
+
+        # 防止接口重放攻击
+        $reset_check = $this -> _checkApiReseRequest($api_request);
+        if ($reset_check['status'] != 200){
+            return response($reset_check);
+        }
 
         # 验证签名 【 防止在传输的过程中的数据被篡改 】
         $check_result = $this-> _checkSign( $api_request, $request->post('sign'));
@@ -81,11 +87,44 @@ class ApiCheck
 
         return json_decode($all_new,true);
     }
+    /*
+     * 防止接口重放攻击
+     */
+    private function _checkApiReseRequest($api_data)
+    {
+        $set_name = 'reset_set';
+        if (!empty($api_data['time']) && !empty($api_data['rand_code'])){
+            $set_code = $api_data['time'].$api_data['rand_code'];
+            $result = Redis::sAdd($set_name,$set_code);
 
+            # 设置集合有效期 1分钟
+            Redis::Expire($set_name,60);
+
+            if ( !$result ){
+                return [
+                    'status'=>2000000,
+                    'data' => [],
+                    'msg' => '请查看参数是否重复'
+                ];
+            }else{
+                return [
+                    'status'=>200,
+                    'data' => [],
+                    'msg' => 'successuly'
+                ];
+            }
+        }else{
+            return [
+                'status'=>9999,
+                'data' => [],
+                'msg' => '缺少重要参数，请查看参数是否正常'
+            ];
+        }
+    }
     /*
      * 限制接口访问次数
      */
-    private function _checkApiRequest(Request $request)
+    private function _checkApiLimit(Request $request)
     {
         $ip = $request -> getClientIp();
         # 黑名单 【有序集合】
