@@ -205,7 +205,6 @@ class ApiCheck
 
     public function getAppSecretByAppkey($app_key)
     {
-
         # 如果appid是错误的，直接返回错误信息
         if (!isset( $this -> _map[$app_key])){
             return ['status'=>1000,'data'=>[],'msg'=>'app_key error'];
