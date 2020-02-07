@@ -6,7 +6,6 @@
       <change afterPath="$PROJECT_DIR$/../myshop" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../shop" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../tp5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/Http/Middleware/ApiCheck.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Http/Middleware/ApiCheck.php" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -60,8 +59,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/Http/Middleware/ApiCheck.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="471">
-              <caret line="206" column="5" selection-start-line="206" selection-start-column="5" selection-end-line="206" selection-end-column="5" />
+            <state relative-caret-position="524">
+              <caret line="222" lean-forward="true" selection-start-line="222" selection-end-line="222" />
               <folding>
                 <element signature="e#39#51#0#PHP" expanded="true" />
               </folding>
@@ -192,7 +191,7 @@
       <path value="$PROJECT_DIR$/vendor/symfony/translation" />
     </include_path>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="-55" />
     <option name="y" value="456" />
     <option name="width" value="1750" />
@@ -309,12 +308,12 @@
       <workItem from="1580963481876" duration="1689000" />
       <workItem from="1580967743197" duration="4261000" />
       <workItem from="1580981445948" duration="946000" />
-      <workItem from="1581033848778" duration="3170000" />
+      <workItem from="1581033848778" duration="3870000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="111229000" />
+    <option name="totallyTimeSpent" value="111929000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -379,6 +378,32 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="RECENTLY_FILTERED_USER_GROUPS">
+                <collection />
+              </option>
+              <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+                <collection />
+              </option>
+              <option name="COLUMN_ORDER">
+                <list>
+                  <option value="0" />
+                  <option value="1" />
+                  <option value="2" />
+                  <option value="3" />
+                </list>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$USER_HOME$/Desktop/大纲/模板/电子商城模板_前台/商城_前台_尤洪Web/尤洪Web/Regist.html">
@@ -458,8 +483,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/Http/Middleware/ApiCheck.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="471">
-          <caret line="206" column="5" selection-start-line="206" selection-start-column="5" selection-end-line="206" selection-end-column="5" />
+        <state relative-caret-position="524">
+          <caret line="222" lean-forward="true" selection-start-line="222" selection-end-line="222" />
           <folding>
             <element signature="e#39#51#0#PHP" expanded="true" />
           </folding>
