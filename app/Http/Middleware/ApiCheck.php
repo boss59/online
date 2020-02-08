@@ -51,7 +51,7 @@ class ApiCheck
         $api_request = $this -> _RsaDcrypt($request);
 
         # 防止接口重放攻击
-        $reset_check = $this -> _checkApiReseRequest($api_request);
+        $reset_check = $this -> _checkApiResetRequest($api_request);
         if ($reset_check['status'] != 200){
             return response($reset_check);
         }
@@ -132,7 +132,7 @@ class ApiCheck
     }
 
     //  接口重放攻击
-    private function _checkApiReseRequest($api_data)
+    private function _checkApiResetRequest($api_data)
     {
         /*
          * 在数据传输的过程中，拦截到正确数据，拿着这个正确的数据，频繁的请求我们的接口。
